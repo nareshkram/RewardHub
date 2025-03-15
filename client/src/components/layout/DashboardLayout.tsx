@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Layout, LayoutDashboard, Gift, HelpCircle, LogOut } from "lucide-react";
+import { Layout, LayoutDashboard, Gift, HelpCircle, LogOut, User } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -15,6 +15,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Tasks", href: "/dashboard/tasks", icon: Layout },
     { name: "Withdrawals", href: "/dashboard/withdrawals", icon: Gift },
+    { name: "Profile", href: "/dashboard/profile", icon: User },
     { name: "Help", href: "/help", icon: HelpCircle },
   ];
 

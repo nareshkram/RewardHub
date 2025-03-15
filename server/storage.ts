@@ -1,6 +1,6 @@
 import { 
   User, InsertUser, Task, InsertTask, 
-  Withdrawal, InsertWithdrawal 
+  Withdrawal, InsertWithdrawal, UpdateUserPayment 
 } from "@shared/schema";
 
 export interface IStorage {
@@ -8,16 +8,18 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   updateUserPoints(id: number, points: number): Promise<User>;
-  
+  updateUserPaymentInfo(id: number, paymentInfo: UpdateUserPayment): Promise<User>;
+
   // Task operations
   createTask(task: InsertTask): Promise<Task>;
   getTasks(): Promise<Task[]>;
   getTask(id: number): Promise<Task | undefined>;
   completeTask(userId: number, taskId: number): Promise<void>;
-  
+
   // Withdrawal operations
-  createWithdrawal(withdrawal: InsertWithdrawal): Promise<Withdrawal>;
+  createWithdrawal(withdrawal: InsertWithdrawal & { status: string }): Promise<Withdrawal>;
   getWithdrawals(userId: number): Promise<Withdrawal[]>;
   updateWithdrawalStatus(id: number, status: string): Promise<Withdrawal>;
 }
@@ -79,6 +81,9 @@ export class MemStorage implements IStorage {
       ...insertUser,
       id,
       points: 0,
+      upiId: null,
+      bankAccount: null,
+      ifscCode: null,
       createdAt: new Date()
     };
     this.users.set(id, user);
@@ -93,13 +98,29 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(u => u.email === email);
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
   async updateUserPoints(id: number, points: number): Promise<User> {
     const user = await this.getUser(id);
     if (!user) throw new Error("User not found");
-    
+
     const updatedUser = {
       ...user,
       points: user.points + points
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async updateUserPaymentInfo(id: number, paymentInfo: UpdateUserPayment): Promise<User> {
+    const user = await this.getUser(id);
+    if (!user) throw new Error("User not found");
+
+    const updatedUser = {
+      ...user,
+      ...paymentInfo
     };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -125,19 +146,20 @@ export class MemStorage implements IStorage {
     if (this.completedTasks.has(key)) {
       throw new Error("Task already completed");
     }
-    
+
     const task = await this.getTask(taskId);
     if (!task) throw new Error("Task not found");
-    
+
     await this.updateUserPoints(userId, task.points);
     this.completedTasks.add(key);
   }
 
-  async createWithdrawal(insertWithdrawal: InsertWithdrawal): Promise<Withdrawal> {
+  async createWithdrawal(insertWithdrawal: InsertWithdrawal & { status: string }): Promise<Withdrawal> {
     const id = this.currentIds.withdrawal++;
     const withdrawal: Withdrawal = {
       ...insertWithdrawal,
       id,
+      paymentId: null,
       createdAt: new Date()
     };
     this.withdrawals.set(id, withdrawal);
@@ -152,7 +174,7 @@ export class MemStorage implements IStorage {
   async updateWithdrawalStatus(id: number, status: string): Promise<Withdrawal> {
     const withdrawal = this.withdrawals.get(id);
     if (!withdrawal) throw new Error("Withdrawal not found");
-    
+
     const updatedWithdrawal = { ...withdrawal, status };
     this.withdrawals.set(id, updatedWithdrawal);
     return updatedWithdrawal;

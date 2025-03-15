@@ -8,6 +8,7 @@ import Register from "@/pages/register";
 import Dashboard from "@/pages/dashboard";
 import Tasks from "@/pages/dashboard/tasks";
 import Withdrawals from "@/pages/dashboard/withdrawals";
+import Profile from "@/pages/dashboard/profile";
 import Help from "@/pages/help";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/tasks" component={Tasks} />
       <Route path="/dashboard/withdrawals" component={Withdrawals} />
+      <Route path="/dashboard/profile" component={Profile} />
       <Route path="/help" component={Help} />
       <Route component={NotFound} />
     </Switch>
