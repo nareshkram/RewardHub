@@ -3,4 +3,5 @@ dist
 .DS_Store
 server/public
 vite.config.ts.*
-*.tar.gz
+*.tar.gz.env
+attached_assets/Pasted--Develop-a-highly-interactive-modern-and-scalable-reward-based-Android-application-named-Reward--1742019326132.txt
