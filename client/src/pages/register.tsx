@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { Loader2 } from "lucide-react";
 import { z } from "zod";
 
 const registerSchema = z.object({
@@ -37,23 +38,29 @@ export default function Register() {
     },
   });
 
+  const getErrorMessage = (errorCode: string): string => {
+    switch (errorCode) {
+      case 'auth/email-already-in-use':
+        return 'An account with this email already exists';
+      case 'auth/invalid-email':
+        return 'Please enter a valid email address';
+      case 'auth/operation-not-allowed':
+        return 'Email/password registration is not enabled';
+      case 'auth/weak-password':
+        return 'Please choose a stronger password';
+      default:
+        return 'An error occurred during registration. Please try again.';
+    }
+  };
+
   const handleRegister = async (data: RegisterFormData) => {
     try {
       setIsLoading(true);
-      // Create user in Firebase
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
         data.password
       );
-      const firebaseUser = userCredential.user;
-
-      // Get device and location info
-      const deviceInfo = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-      };
 
       toast({
         title: "Registration successful",
@@ -62,8 +69,8 @@ export default function Register() {
       setLocation("/");
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Registration failed",
+        description: getErrorMessage(error.code),
         variant: "destructive",
       });
     } finally {
@@ -72,10 +79,11 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
+        <CardHeader className="space-y-2">
           <CardTitle className="text-2xl font-bold text-center">Create an Account</CardTitle>
+          <p className="text-muted-foreground text-center">Join Reward Hub and start earning</p>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -147,15 +155,20 @@ export default function Register() {
               />
               <Button 
                 type="submit" 
-                className="w-full"
+                className="w-full relative"
                 disabled={isLoading}
               >
-                {isLoading ? "Creating account..." : "Register"}
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Create Account"
+                )}
               </Button>
               <div className="text-center mt-4">
                 <Button 
                   variant="link" 
                   onClick={() => setLocation("/")}
+                  disabled={isLoading}
                 >
                   Already have an account? Login
                 </Button>
