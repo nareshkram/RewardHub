@@ -9,28 +9,43 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { insertUserSchema } from "@shared/schema";
+import { z } from "zod";
+
+const registerSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm({
-    resolver: zodResolver(insertUserSchema),
+  const form = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       email: "",
+      password: "",
       fullName: "",
       phone: "",
       dateOfBirth: "",
     },
   });
 
-  const handleRegister = async (data: typeof form.getValues) => {
+  const handleRegister = async (data: RegisterFormData) => {
     try {
       setIsLoading(true);
       // Create user in Firebase
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
       const firebaseUser = userCredential.user;
 
       // Get device and location info
@@ -38,14 +53,6 @@ export default function Register() {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
         language: navigator.language,
-      };
-
-      // Create user in our database with Firebase UID
-      const userData = {
-        ...data,
-        firebaseUid: firebaseUser.uid,
-        deviceInfo: JSON.stringify(deviceInfo),
-        referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
       };
 
       toast({
