@@ -4,19 +4,41 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Play, Award } from "lucide-react";
+import { Play, Award, PenSquare } from "lucide-react";
+import { antiCheat } from "@/lib/anti-cheat";
 
 interface TaskCardProps {
   task: Task;
   userId: number;
+  currency: {
+    code: string;
+    symbol: string;
+    rate: number;
+  };
 }
 
-export default function TaskCard({ task, userId }: TaskCardProps) {
+export default function TaskCard({ task, userId, currency }: TaskCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const completeMutation = useMutation({
     mutationFn: async () => {
+      // Validate task completion
+      const metrics = {
+        taskCompletionSpeed: 5, // Example: 5 seconds
+        mouseMovements: true,
+        keyboardEvents: true,
+        timeSpent: 10,
+      };
+
+      if (!antiCheat.validateTaskCompletion(metrics)) {
+        throw new Error("Task completion validation failed");
+      }
+
+      if (!antiCheat.validateEarningPattern(userId, task.points)) {
+        throw new Error("Daily earning limit exceeded");
+      }
+
       const res = await apiRequest("POST", `/api/tasks/${task.id}/complete`, { userId });
       return res.json();
     },
@@ -24,7 +46,7 @@ export default function TaskCard({ task, userId }: TaskCardProps) {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
         title: "Task completed!",
-        description: `You earned ${task.points} points`,
+        description: `You earned ${currency.symbol}${(task.points * 0.01 * currency.rate).toFixed(2)}`,
       });
     },
     onError: (error) => {
@@ -41,7 +63,7 @@ export default function TaskCard({ task, userId }: TaskCardProps) {
       case "ad":
         return <Play className="h-5 w-5" />;
       case "survey":
-        return <Award className="h-5 w-5" />;
+        return <PenSquare className="h-5 w-5" />;
       default:
         return <Award className="h-5 w-5" />;
     }
@@ -69,10 +91,10 @@ export default function TaskCard({ task, userId }: TaskCardProps) {
             <CardTitle>{task.title}</CardTitle>
           </div>
           <div className="text-lg font-bold text-primary">
-            {task.points} pts
+            {currency.symbol}{(task.points * 0.01 * currency.rate).toFixed(2)}
           </div>
         </div>
-        <CardDescription>{task.description}</CardDescription>
+        <CardDescription className="mt-2">{task.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <Button 
