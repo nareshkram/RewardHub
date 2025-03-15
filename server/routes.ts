@@ -17,6 +17,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   });
 
+  // User preferences routes
+  app.patch("/api/users/:userId/preferences", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { preferredLanguage, darkMode } = z.object({
+        preferredLanguage: z.string(),
+        darkMode: z.boolean(),
+      }).parse(req.body);
+
+      const user = await storage.updateUserPreferences(userId, {
+        preferredLanguage,
+        darkMode,
+      });
+      res.json(user);
+    } catch (error) {
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to update preferences" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {

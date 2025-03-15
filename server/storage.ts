@@ -11,6 +11,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUserPoints(id: number, points: number): Promise<User>;
   updateUserPaymentInfo(id: number, paymentInfo: UpdateUserPayment): Promise<User>;
+  updateUserPreferences(id: number, preferences: { preferredLanguage: string; darkMode: boolean }): Promise<User>;
 
   // Task operations
   createTask(task: InsertTask): Promise<Task>;
@@ -178,6 +179,18 @@ export class MemStorage implements IStorage {
     const updatedWithdrawal = { ...withdrawal, status };
     this.withdrawals.set(id, updatedWithdrawal);
     return updatedWithdrawal;
+  }
+
+  async updateUserPreferences(id: number, preferences: { preferredLanguage: string; darkMode: boolean }): Promise<User> {
+    const user = await this.getUser(id);
+    if (!user) throw new Error("User not found");
+
+    const updatedUser = {
+      ...user,
+      ...preferences
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 }
 
