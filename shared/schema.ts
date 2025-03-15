@@ -4,14 +4,23 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  firebaseUid: text("firebase_uid").unique(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  name: text("name").notNull(),
-  points: integer("points").notNull().default(0),
+  fullName: text("full_name").notNull(),
+  profilePhoto: text("profile_photo"),
+  dateOfBirth: text("date_of_birth"),
   phone: text("phone"),
+  location: text("location"),
+  address: text("address"),
+  deviceInfo: text("device_info"),
+  ipAddress: text("ip_address"),
+  referralCode: text("referral_code").unique(),
+  points: integer("points").notNull().default(0),
   upiId: text("upi_id"),
   bankAccount: text("bank_account"),
   ifscCode: text("ifsc_code"),
+  preferredLanguage: text("preferred_language").default("en"),
+  darkMode: boolean("dark_mode").default(false),
   createdAt: timestamp("created_at").defaultNow()
 });
 

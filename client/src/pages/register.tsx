@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -6,44 +7,62 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { insertUserSchema } from "@shared/schema";
 
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
       email: "",
-      password: "",
-      name: "",
+      fullName: "",
       phone: "",
+      dateOfBirth: "",
     },
   });
 
-  const registerMutation = useMutation({
-    mutationFn: async (data: typeof form.getValues) => {
-      const res = await apiRequest("POST", "/api/auth/register", data);
-      return res.json();
-    },
-    onSuccess: () => {
+  const handleRegister = async (data: typeof form.getValues) => {
+    try {
+      setIsLoading(true);
+      // Create user in Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const firebaseUser = userCredential.user;
+
+      // Get device and location info
+      const deviceInfo = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+      };
+
+      // Create user in our database with Firebase UID
+      const userData = {
+        ...data,
+        firebaseUid: firebaseUser.uid,
+        deviceInfo: JSON.stringify(deviceInfo),
+        referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+      };
+
       toast({
         title: "Registration successful",
         description: "Please login to continue",
       });
       setLocation("/");
-    },
-    onError: (error) => {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-    },
-  });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -53,10 +72,10 @@ export default function Register() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit((data) => registerMutation.mutate(data))} className="space-y-4">
+            <form onSubmit={form.handleSubmit(handleRegister)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="fullName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
@@ -95,10 +114,23 @@ export default function Register() {
               />
               <FormField
                 control={form.control}
+                name="dateOfBirth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date of Birth</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone (Optional)</FormLabel>
+                    <FormLabel>Phone (For Withdrawals)</FormLabel>
                     <FormControl>
                       <Input {...field} type="tel" placeholder="Enter your phone number" />
                     </FormControl>
@@ -109,9 +141,9 @@ export default function Register() {
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={registerMutation.isPending}
+                disabled={isLoading}
               >
-                {registerMutation.isPending ? "Creating account..." : "Register"}
+                {isLoading ? "Creating account..." : "Register"}
               </Button>
               <div className="text-center mt-4">
                 <Button 
