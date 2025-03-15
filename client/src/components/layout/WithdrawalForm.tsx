@@ -24,7 +24,7 @@ export default function WithdrawalForm({ userId, userPoints }: WithdrawalFormPro
       userId,
       amount: 0,
       method: "upi",
-      status: "pending"
+      paymentDetails: ""
     }
   });
 
@@ -49,6 +49,8 @@ export default function WithdrawalForm({ userId, userPoints }: WithdrawalFormPro
       });
     },
   });
+
+  const watchMethod = form.watch("method");
 
   return (
     <Form {...form}>
@@ -85,11 +87,32 @@ export default function WithdrawalForm({ userId, userPoints }: WithdrawalFormPro
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="upi">UPI (₹5 fee)</SelectItem>
-                  <SelectItem value="bank">Bank Transfer (₹20 fee)</SelectItem>
-                  <SelectItem value="paypal">PayPal (₹10 + provider fee)</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="bank">Bank Transfer</SelectItem>
                 </SelectContent>
               </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="paymentDetails"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>
+                {watchMethod === "upi" ? "UPI ID" : "Bank Account Details"}
+              </FormLabel>
+              <FormControl>
+                <Input 
+                  {...field} 
+                  placeholder={
+                    watchMethod === "upi" 
+                      ? "Enter your UPI ID (e.g., name@upi)" 
+                      : "Account Number, IFSC Code, Account Holder Name"
+                  }
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

@@ -20,9 +20,11 @@ export default function Withdrawals() {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "approved":
+      case "processing":
+        return "bg-blue-100 text-blue-800";
+      case "completed":
         return "bg-green-100 text-green-800";
-      case "rejected":
+      case "failed":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -68,28 +70,31 @@ export default function Withdrawals() {
                   withdrawals.map((withdrawal) => (
                     <div
                       key={withdrawal.id}
-                      className="flex items-center justify-between border-b py-2"
+                      className="border rounded-lg p-4 space-y-2"
                     >
-                      <div>
-                        <p className="font-medium">
-                          {withdrawal.amount} points
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(
-                            new Date(withdrawal.createdAt),
-                            "MMM d, yyyy"
-                          )}
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {withdrawal.amount} points
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(withdrawal.createdAt), "MMM d, yyyy")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={getStatusColor(withdrawal.status)}
+                          >
+                            {withdrawal.status}
+                          </Badge>
+                          <Badge variant="outline">
+                            {withdrawal.method}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          className={getStatusColor(withdrawal.status)}
-                        >
-                          {withdrawal.status}
-                        </Badge>
-                        <Badge variant="outline">
-                          {withdrawal.method}
-                        </Badge>
+                      <div className="text-sm bg-gray-50 p-2 rounded">
+                        <strong>Payment Details:</strong><br />
+                        {withdrawal.paymentDetails}
                       </div>
                     </div>
                   ))

@@ -9,6 +9,9 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   points: integer("points").notNull().default(0),
   phone: text("phone"),
+  upiId: text("upi_id"),
+  bankAccount: text("bank_account"),
+  ifscCode: text("ifsc_code"),
   createdAt: timestamp("created_at").defaultNow()
 });
 
@@ -31,15 +34,26 @@ export const withdrawals = pgTable("withdrawals", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   amount: integer("amount").notNull(),
-  status: text("status").notNull(), // 'pending', 'approved', 'rejected'
-  method: text("method").notNull(), // 'upi', 'bank', 'paypal'
+  status: text("status").notNull(), // 'pending', 'processing', 'completed', 'failed'
+  method: text("method").notNull(), // 'upi', 'bank'
+  paymentId: text("payment_id"), // Razorpay payment ID
+  paymentDetails: text("payment_details"), // UPI ID or Bank Account details
   createdAt: timestamp("created_at").defaultNow()
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ 
   id: true,
   createdAt: true,
-  points: true
+  points: true,
+  upiId: true,
+  bankAccount: true,
+  ifscCode: true
+});
+
+export const updateUserPaymentSchema = z.object({
+  upiId: z.string().optional(),
+  bankAccount: z.string().optional(),
+  ifscCode: z.string().optional()
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({ 
@@ -48,11 +62,16 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
 
 export const insertWithdrawalSchema = createInsertSchema(withdrawals).omit({ 
   id: true,
-  createdAt: true
+  createdAt: true,
+  paymentId: true,
+  status: true
+}).extend({
+  paymentDetails: z.string()
 });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUserPayment = z.infer<typeof updateUserPaymentSchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Withdrawal = typeof withdrawals.$inferSelect;
